@@ -1,0 +1,8 @@
+name: incident-commander-env
+description: DevOps incident debugging environment using logs
+entrypoint: api/main.py
+
+tasks:
+  - easy
+  - medium
+  - hard
