@@ -1,5 +1,5 @@
 import requests
-BASE="http://localhost:8000"
+BASE="http://localhost:7860"
 
 def run(task):
     requests.get(f"{BASE}/reset?task_id={task}")
