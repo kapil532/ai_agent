@@ -5,6 +5,19 @@ from app.graders import grade_easy, grade_medium, grade_hard
 app = FastAPI()
 env = IncidentEnv()
 
+
+@app.get("/")
+def home():
+    return {
+        "message": "Incident Commander OpenEnv is running",
+        "endpoints": [
+            "/reset?task_id=easy",
+            "/step",
+            "/state",
+            "/grader",
+            "/tasks"
+        ]
+    }
 @app.get("/reset")
 def reset(task_id: str = "easy"):
     return env.reset(task_id)
