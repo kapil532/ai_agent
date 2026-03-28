@@ -83,7 +83,13 @@ def home():
 
             async function reset(level) {
                 currentTask = level;
-                const res = await fetch(`/reset?task_id=${level}`);
+
+                const res = await fetch(`/reset`, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({ task_id: level })
+                });
+
                 const data = await res.json();
                 document.getElementById("output").innerText = JSON.stringify(data, null, 2);
             }
@@ -114,10 +120,22 @@ def home():
     """
 
 
-# 🔄 Reset Environment
-@app.get("/reset")
-def reset(task_id: str = "easy"):
+# 🔄 Reset Environment (POST - OpenEnv compliant)
+@app.post("/reset")
+def reset_post(data: dict = {}):
     global env
+
+    task_id = data.get("task_id", "easy")
+
+    env = IncidentEnv()
+    return env.reset(task_id)
+
+
+# 🔄 Optional GET (for manual testing)
+@app.get("/reset")
+def reset_get(task_id: str = "easy"):
+    global env
+
     env = IncidentEnv()
     return env.reset(task_id)
 
@@ -125,6 +143,8 @@ def reset(task_id: str = "easy"):
 # ⚙️ Step Action
 @app.post("/step")
 def step(action: dict):
+    if env is None:
+        return {"error": "Call /reset first"}
     return env.step(action)
 
 
@@ -155,7 +175,7 @@ def grader(task_id: str):
     return {"score": score}
 
 
-# 🟢 Health Check (for debugging)
+# 🟢 Health Check
 @app.get("/health")
 def health():
     return {"status": "running"}
