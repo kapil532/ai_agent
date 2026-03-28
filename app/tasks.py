@@ -10,7 +10,7 @@ def load_task(task_id):
     if task_id == "medium":
         return {
             "logs": [
-                {"timestamp": "10:01", "service": "payment", "message": "DB connection failed"}
+                {"timestamp": "10:01", "service": "payment", "message": "DB connection fail"}
             ],
             "service": "payment"
         }
