@@ -154,6 +154,13 @@ def state():
     return env.state()
 
 
+@app.get("/baseline")
+def baseline():
+    import subprocess
+    result = subprocess.check_output(["python", "inference.py"])
+    return {"result": result.decode()}
+
+
 # 📋 Available Tasks
 @app.get("/tasks")
 def tasks():
