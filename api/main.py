@@ -15,38 +15,11 @@ def home():
     <head>
         <title>Incident Commander</title>
         <style>
-            body {
-                font-family: Arial;
-                background: #0f172a;
-                color: #e2e8f0;
-                text-align: center;
-                padding: 40px;
-            }
-            h1 {
-                color: #38bdf8;
-            }
-            .card {
-                background: #1e293b;
-                padding: 20px;
-                margin: 20px auto;
-                width: 60%;
-                border-radius: 10px;
-            }
-            button {
-                background: #38bdf8;
-                border: none;
-                padding: 10px 20px;
-                margin: 10px;
-                border-radius: 5px;
-                cursor: pointer;
-            }
-            pre {
-                text-align: left;
-                background: #020617;
-                padding: 10px;
-                border-radius: 5px;
-                overflow-x: auto;
-            }
+            body { font-family: Arial; background: #0f172a; color: #e2e8f0; text-align: center; padding: 40px; }
+            h1 { color: #38bdf8; }
+            .card { background: #1e293b; padding: 20px; margin: 20px auto; width: 60%; border-radius: 10px; }
+            button { background: #38bdf8; border: none; padding: 10px 20px; margin: 10px; border-radius: 5px; cursor: pointer; }
+            pre { text-align: left; background: #020617; padding: 10px; border-radius: 5px; overflow-x: auto; }
         </style>
     </head>
     <body>
@@ -120,51 +93,83 @@ def home():
     """
 
 
-# 🔄 Reset Environment (POST - OpenEnv compliant)
+# 🔄 Reset (POST - REQUIRED)
 @app.post("/reset")
 def reset_post(data: dict = {}):
     global env
-
     task_id = data.get("task_id", "easy")
-
     env = IncidentEnv()
-    return env.reset(task_id)
+    obs = env.reset(task_id)
+
+    return {
+        "observation": obs
+    }
 
 
-# 🔄 Optional GET (for manual testing)
+# 🔄 Optional GET
 @app.get("/reset")
 def reset_get(task_id: str = "easy"):
     global env
-
     env = IncidentEnv()
-    return env.reset(task_id)
+    obs = env.reset(task_id)
+
+    return {
+        "observation": obs
+    }
 
 
-# ⚙️ Step Action
+# ⚙️ Step
 @app.post("/step")
 def step(action: dict):
-    if env is None:
-        return {"error": "Call /reset first"}
-    return env.step(action)
+    obs, reward, done, info = env.step(action)
+
+    return {
+        "observation": obs,
+        "reward": reward,
+        "done": done,
+        "info": info
+    }
 
 
-# 🧠 Current State
+# 🧠 State
 @app.get("/state")
 def state():
-    return env.state()
+    return {
+        "state": env.state()
+    }
 
 
-@app.get("/baseline")
-def baseline():
-    import subprocess
-    result = subprocess.check_output(["python", "inference.py"])
-    return {"result": result.decode()}
-
-
-# 📋 Available Tasks
+# 📋 Tasks (FIXED STRUCTURE)
 @app.get("/tasks")
 def tasks():
-    return ["easy", "medium", "hard"]
+    return {
+        "tasks": [
+            {
+                "id": "easy",
+                "description": "Identify error from logs",
+                "action_schema": {
+                    "action_type": "string",
+                    "target": "string"
+                }
+            },
+            {
+                "id": "medium",
+                "description": "Map error to service",
+                "action_schema": {
+                    "action_type": "string",
+                    "target": "string"
+                }
+            },
+            {
+                "id": "hard",
+                "description": "Multi-step incident resolution",
+                "action_schema": {
+                    "action_type": "string",
+                    "target": "string"
+                }
+            }
+        ]
+    }
 
 
 # 🧪 Grader
@@ -182,7 +187,30 @@ def grader(task_id: str):
     return {"score": score}
 
 
-# 🟢 Health Check
+# 🚀 Baseline (FIXED - no subprocess)
+@app.get("/baseline")
+def baseline():
+    import requests
+
+    BASE = "http://localhost:7860"
+    results = {}
+
+    for task in ["easy", "medium", "hard"]:
+        requests.post(f"{BASE}/reset", json={"task_id": task})
+
+        for _ in range(3):
+            requests.post(f"{BASE}/step", json={
+                "action_type": "identify",
+                "target": "auto"
+            })
+
+        score = requests.get(f"{BASE}/grader", params={"task_id": task}).json()
+        results[task] = score
+
+    return results
+
+
+# 🟢 Health
 @app.get("/health")
 def health():
     return {"status": "running"}
