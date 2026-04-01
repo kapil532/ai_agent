@@ -2,10 +2,10 @@
 title: Incident Commander OpenEnv
 emoji: 🚨
 colorFrom: red
-colorTo: orange
+colorTo: pink
 sdk: docker
 pinned: true
-short_description: AI-powered DevOps incident simulation for troubleshooting production failures
+short_description: AI DevOps incident simulation for agent training
 ---
 
 # Incident Commander OpenEnv
