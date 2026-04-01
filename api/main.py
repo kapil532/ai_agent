@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Body
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
@@ -107,10 +107,13 @@ def home():
 
 # 🔄 Reset (POST - REQUIRED for OpenEnv)
 @app.post("/reset")
-def reset_post(request: ResetRequest):
+def reset_post(body: Dict = Body(...)):
     global env
+    
+    task_id = body.get("task_id", "easy")
+    
     env = IncidentEnv()
-    obs = env.reset(request.task_id)
+    obs = env.reset(task_id)
 
     return {
         "observation": obs,
@@ -132,9 +135,8 @@ def reset_get(task_id: str = "easy"):
 
 # ⚙️ Step (POST - REQUIRED for OpenEnv)
 @app.post("/step")
-def step(action: ActionRequest):
-    action_dict = action.dict()
-    obs, reward, done, info = env.step(action_dict)
+def step(action: Dict = Body(...)):
+    obs, reward, done, info = env.step(action)
 
     return {
         "observation": obs,
