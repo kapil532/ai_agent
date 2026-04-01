@@ -1,10 +1,22 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
+from typing import Optional, Dict, Any
 from app.env import IncidentEnv
 from app.graders import grade_easy, grade_medium, grade_hard
 
-app = FastAPI()
+app = FastAPI(title="Incident Commander OpenEnv")
 env = IncidentEnv()
+
+
+# 📋 Request/Response Models (OpenEnv Compliant)
+class ActionRequest(BaseModel):
+    action_type: str
+    target: Optional[str] = None
+
+
+class ResetRequest(BaseModel):
+    task_id: str = "easy"
 
 
 # 🌐 UI Dashboard
@@ -93,16 +105,16 @@ def home():
     """
 
 
-# 🔄 Reset (POST - REQUIRED)
+# 🔄 Reset (POST - REQUIRED for OpenEnv)
 @app.post("/reset")
-def reset_post(data: dict = {}):
+def reset_post(request: ResetRequest):
     global env
-    task_id = data.get("task_id", "easy")
     env = IncidentEnv()
-    obs = env.reset(task_id)
+    obs = env.reset(request.task_id)
 
     return {
-        "observation": obs
+        "observation": obs,
+        "info": {}
     }
 
 
@@ -118,10 +130,11 @@ def reset_get(task_id: str = "easy"):
     }
 
 
-# ⚙️ Step
+# ⚙️ Step (POST - REQUIRED for OpenEnv)
 @app.post("/step")
-def step(action: dict):
-    obs, reward, done, info = env.step(action)
+def step(action: ActionRequest):
+    action_dict = action.dict()
+    obs, reward, done, info = env.step(action_dict)
 
     return {
         "observation": obs,
@@ -213,4 +226,44 @@ def baseline():
 # 🟢 Health
 @app.get("/health")
 def health():
-    return {"status": "running"}
+    return {"status": "ok", "version": "1.0.0"}
+
+
+# 📋 Schema (OpenEnv Compliance)
+@app.get("/schema")
+def schema():
+    return {
+        "action": {
+            "type": "object",
+            "properties": {
+                "action_type": {"type": "string", "description": "Type of action: identify, fix, notify, map_service"},
+                "target": {"type": "string", "description": "Target service or component"}
+            },
+            "required": ["action_type"]
+        },
+        "observation": {
+            "type": "object",
+            "properties": {
+                "logs": {"type": "array", "description": "List of log entries"},
+                "task": {"type": "string", "description": "Task status"},
+                "step_count": {"type": "integer", "description": "Number of steps taken"}
+            }
+        },
+        "reward": {
+            "type": "object",
+            "properties": {
+                "score": {"type": "number", "description": "Reward score"},
+                "reason": {"type": "string", "description": "Reason for reward"}
+            }
+        }
+    }
+
+
+# 📊 Metrics (OpenEnv compliance - optional but recommended)
+@app.get("/metrics")
+def metrics():
+    return {
+        "tasks": ["easy", "medium", "hard"],
+        "max_steps": 5,
+        "action_types": ["identify", "fix", "notify", "map_service"]
+    }
