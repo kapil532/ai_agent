@@ -7,6 +7,17 @@ from app.graders import grade_easy, grade_medium, grade_hard
 
 app = FastAPI(title="Incident Commander OpenEnv")
 env = IncidentEnv()
+# Initialize with default task
+env.reset("easy")
+
+
+# Startup event to ensure proper initialization
+@app.on_event("startup")
+async def startup_event():
+    global env
+    if env is None:
+        env = IncidentEnv()
+        env.reset("easy")
 
 
 # 📋 Request/Response Models (OpenEnv Compliant)
@@ -131,17 +142,27 @@ def reset_get(task_id: str = "easy"):
     env = IncidentEnv()
     obs = env.reset(task_id)
 
+    # Match POST format
     return {
-        "observation": obs
+        "observation": obs,
+        "info": {}
     }
 
 
 # ⚙️ Step (POST - REQUIRED for OpenEnv)
 @app.post("/step")
 async def step(action: Optional[Dict] = Body(None)):
+    global env
+    
+    # Ensure env is initialized
+    if env is None or env.state_obj is None:
+        env = IncidentEnv()
+        env.reset("easy")
+    
     if not action:
         # Return in list format [obs, reward, done, info]
-        return [None, {"score": 0, "reason": "no action"}, False, {}]
+        obs = env.state_obj.get_observation() if env.state_obj else None
+        return [obs, {"score": 0, "reason": "no action"}, False, {}]
     
     obs, reward, done, info = env.step(action)
 
