@@ -1,8 +1,137 @@
-name: incident-commander-env
-description: DevOps incident debugging environment using logs
+name: Incident Commander
+version: "1.0.0"
+description: |
+  AI-powered DevOps incident simulation environment for troubleshooting 
+  production system failures. Agents must identify root causes, implement 
+  fixes, and notify stakeholders in real-world incident scenarios.
+
+type: devops_simulation
+category: incident_management
+language: python
+framework: fastapi
 entrypoint: api/main.py
 
 tasks:
-  - easy
-  - medium
-  - hard
+  easy:
+    name: Simple Error Identification
+    description: |
+      Identify a single service error from logs. The agent must recognize 
+      NullPointerException in auth service and take appropriate action.
+    difficulty: 1
+    max_steps: 5
+    
+  medium:
+    name: Service Dependency Debugging
+    description: |
+      Diagnose database connection failure in payment service. Requires 
+      mapping the error to root cause.
+    difficulty: 2
+    max_steps: 5
+    
+  hard:
+    name: Multi-Service Incident Resolution
+    description: |
+      Handle cascade failures across checkout service with retries. 
+      Requires identify, fix, and notify actions.
+    difficulty: 3
+    max_steps: 5
+
+action_space:
+  type: object
+  description: Actions the agent can take to diagnose and resolve incidents
+  properties:
+    action_type:
+      type: string
+      enum: [identify, fix, notify, map_service]
+      description: |
+        - identify: Confirm hypothesis about root cause
+        - fix: Implement corrective action  
+        - notify: Alert stakeholders about incident
+        - map_service: Map error to affected service
+    target:
+      type: string
+      description: Target service or component for the action
+
+observation_space:
+  type: object
+  description: Current state of the incident environment
+  properties:
+    logs:
+      type: array
+      items:
+        type: object
+        properties:
+          timestamp:
+            type: string
+          service:
+            type: string
+          message:
+            type: string
+      description: System logs showing errors and events
+    task:
+      type: string
+      enum: [active, pending, resolved]
+      description: Current status of the incident
+    step_count:
+      type: integer
+      description: Number of actions taken so far
+
+reward_space:
+  type: object
+  description: Reward signal for agent progress
+  properties:
+    score:
+      type: number
+      minimum: 0.0
+      maximum: 1.0
+    reason:
+      type: string
+
+endpoints:
+  reset:
+    method: POST
+    path: /reset
+    description: Reset environment to initial state
+    parameters:
+      task_id:
+        type: string
+        enum: [easy, medium, hard]
+        default: easy
+        
+  step:
+    method: POST
+    path: /step
+    description: Execute action in environment
+    
+  state:
+    method: GET
+    path: /state
+    description: Get current environment state
+    
+  grader:
+    method: GET
+    path: /grader
+    description: Get task performance score
+    parameters:
+      task_id:
+        type: string
+        enum: [easy, medium, hard]
+
+baselines:
+  random_identify:
+    description: Takes identify action repeatedly
+    expected_scores:
+      easy: 1.0
+      medium: 0.0
+      hard: 0.3
+
+metadata:
+  author: Kapil
+  license: MIT
+  created_at: "2026-04-01"
+  tags:
+    - devops
+    - incident-management
+    - simulation
+    - multi-agent
+    - debugging
