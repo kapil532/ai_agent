@@ -107,10 +107,12 @@ def home():
 
 # 🔄 Reset (POST - REQUIRED for OpenEnv)
 @app.post("/reset")
-async def reset_post(body: Dict = Body(...)):
+async def reset_post(body: Optional[Dict] = Body(None)):
     global env
     
-    task_id = body.get("task_id", "easy")
+    task_id = "easy"
+    if body:
+        task_id = body.get("task_id", "easy")
     
     env = IncidentEnv()
     obs = env.reset(task_id)
@@ -135,7 +137,16 @@ def reset_get(task_id: str = "easy"):
 
 # ⚙️ Step (POST - REQUIRED for OpenEnv)
 @app.post("/step")
-async def step(action: Dict = Body(...)):
+async def step(action: Optional[Dict] = Body(None)):
+    if not action:
+        return {
+            "error": "action required",
+            "observation": None,
+            "reward": 0,
+            "done": False,
+            "info": {}
+        }
+    
     obs, reward, done, info = env.step(action)
 
     return {
