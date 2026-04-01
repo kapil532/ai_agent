@@ -6,8 +6,9 @@ BASE_URL = os.getenv("BASE_URL", "http://localhost:7860")
 
 def run_task(task_id):
     # Reset environment
-    requests.post(f"{BASE_URL}/reset", json={"task_id": task_id})
-
+    reset_res = requests.post(f"{BASE_URL}/reset", json={"task_id": task_id})
+    reset_data = reset_res.json()
+    
     done = False
     steps = 0
 
@@ -20,6 +21,7 @@ def run_task(task_id):
         res = requests.post(f"{BASE_URL}/step", json=action)
         data = res.json()
 
+        # Handle both list format [obs, reward, done, info]
         done = data[2] if isinstance(data, list) else False
         steps += 1
 

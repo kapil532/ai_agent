@@ -1,20 +1,12 @@
-@app.get("/baseline")
-def baseline():
-    import requests
+import requests
+BASE="http://localhost:7860"
 
-    BASE = "http://localhost:7860"
-    results = {}
+def run(task):
+    requests.get(f"{BASE}/reset?task_id={task}")
+    for _ in range(3):
+        requests.post(f"{BASE}/step", json={"action_type":"identify"})
+    return requests.get(f"{BASE}/grader?task_id={task}").json()
 
-    for task in ["easy", "medium", "hard"]:
-        requests.post(f"{BASE}/reset", json={"task_id": task})
-
-        for _ in range(3):
-            requests.post(f"{BASE}/step", json={
-                "action_type": "identify",
-                "target": "auto"
-            })
-
-        score = requests.get(f"{BASE}/grader", params={"task_id": task}).json()
-        results[task] = score
-
-    return results
+if __name__=="__main__":
+    for t in ["easy","medium","hard"]:
+        print(t, run(t))
