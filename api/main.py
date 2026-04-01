@@ -117,10 +117,8 @@ async def reset_post(body: Optional[Dict] = Body(None)):
     env = IncidentEnv()
     obs = env.reset(task_id)
 
-    return {
-        "observation": obs,
-        "info": {}
-    }
+    # Return observation directly for OpenEnv compatibility
+    return obs
 
 
 # 🔄 Optional GET
@@ -139,22 +137,12 @@ def reset_get(task_id: str = "easy"):
 @app.post("/step")
 async def step(action: Optional[Dict] = Body(None)):
     if not action:
-        return {
-            "error": "action required",
-            "observation": None,
-            "reward": 0,
-            "done": False,
-            "info": {}
-        }
+        return [None, 0, False, {}]
     
     obs, reward, done, info = env.step(action)
 
-    return {
-        "observation": obs,
-        "reward": reward,
-        "done": done,
-        "info": info
-    }
+    # Return as list for OpenEnv compatibility: [observation, reward, done, info]
+    return [obs, reward, done, info]
 
 
 # 🧠 State
