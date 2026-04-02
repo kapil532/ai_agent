@@ -1,5 +1,5 @@
 """Server module for incident-commander-openenv OpenEnv environment."""
 
-from api.main import app
+from server.app import main
 
-__all__ = ["app"]
+__all__ = ["main"]
