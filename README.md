@@ -27,6 +27,57 @@ This environment simulates production incident response where:
 - **Medium Task**: Service dependency debugging (e.g., database connection failures)
 - **Hard Task**: Multi-service cascade failures requiring orchestinated resolution
 
+## 🚀 Real-Time Hackathon Features
+
+This implementation includes **cutting-edge real-time capabilities** designed to win your Meta hackathon:
+
+### ⚡ Challenge Mode
+- **Time-based competitions** (2-5 minutes per task)
+- Speed bonuses up to 1.5x score multiplier
+- Real-time countdown timer with visual indicators
+
+```bash
+curl -X POST "http://localhost:7860/challenge/reset?task_id=easy"
+```
+
+### 🏆 Real-Time Leaderboard
+- Live rankings of top performers
+- Automatic score aggregation and rankings
+- Real-time updates every 2 seconds
+
+```bash
+curl "http://localhost:7860/leaderboard?limit=10"
+```
+
+### 📊 Live Dashboard
+- Real-time metrics and statistics
+- Active session monitoring
+- Beautiful web UI at `/`
+
+### 🎯 Multiplayer Arena
+- Compete with other agents in real-time
+- Fair scoring and transparent rankings
+- Perfect for multi-agent tournaments
+
+### ⚡ WebSocket Streaming
+- Live metric updates via WebSocket
+- Real-time performance tracking
+- Enable reactive visualization
+
+```javascript
+const ws = new WebSocket('ws://localhost:7860/ws/stream/session-id');
+ws.onmessage = (e) => console.log(JSON.parse(e.data));
+```
+
+### 📈 Performance Analytics
+- Per-session detailed metrics
+- Efficiency scoring (reward/step)
+- Real-time competitive ranking
+
+```bash
+curl "http://localhost:7860/analytics/session-id"
+```
+
 ## Installation
 
 ### Local Setup
