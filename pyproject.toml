@@ -41,7 +41,11 @@ dependencies = [
     "pydantic>=1.10.0",
     "requests>=2.28.0",
     "pyyaml>=6.0",
+    "openenv>=0.1.0",
 ]
+
+[project.scripts]
+server = "api.main:app"
 
 [project.optional-dependencies]
 dev = [
@@ -58,7 +62,7 @@ Documentation = "https://huggingface.co/spaces/kapil532/tathastu"
 Issues = "https://github.com/kapil532/ai_agent/issues"
 
 [tool.setuptools]
-packages = ["api", "app", "baseline"]
+packages = ["api", "app", "baseline", "server"]
 
 [tool.black]
 line-length = 100
