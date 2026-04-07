@@ -1,6 +1,7 @@
-fastapi
-uvicorn
-pydantic
-requests
-pyyaml
-websockets
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+requests==2.31.0
+pyyaml==6.0.1
+websockets==12.0
+openenv==0.1.0
