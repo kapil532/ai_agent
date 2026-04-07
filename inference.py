@@ -2,6 +2,7 @@ import requests
 import os
 import json
 from openai import OpenAI
+import httpx
 
 BASE_URL = os.getenv("BASE_URL", "http://localhost:7860")
 
@@ -9,10 +10,23 @@ BASE_URL = os.getenv("BASE_URL", "http://localhost:7860")
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000/v1")
 API_KEY = os.getenv("API_KEY", "sk-test-key")
 
-client = OpenAI(
-    api_key=API_KEY,
-    base_url=API_BASE_URL
-)
+# Initialize client with explicit httpx configuration
+try:
+    # Create httpx client with explicit configuration
+    http_client = httpx.Client(
+        timeout=30.0,
+        verify=False,  # Allow self-signed certs for local proxies
+        limits=httpx.Limits(max_connections=100)
+    )
+    
+    client = OpenAI(
+        api_key=API_KEY,
+        base_url=API_BASE_URL,
+        http_client=http_client
+    )
+except Exception as e:
+    print(f"[ERROR] Failed to initialize OpenAI client: {e}", flush=True)
+    client = None
 
 
 def run_task(task_id):
@@ -38,6 +52,9 @@ def run_task(task_id):
             state_info = f"Task: {task_id}, Step: {steps + 1}, Total Reward: {total_reward}"
             
             # Use LLM to decide next action via LiteLLM proxy
+            if client is None:
+                raise RuntimeError("OpenAI client not initialized")
+            
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
