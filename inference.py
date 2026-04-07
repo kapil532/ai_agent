@@ -1,7 +1,18 @@
 import requests
 import os
+import json
+from openai import OpenAI
 
 BASE_URL = os.getenv("BASE_URL", "http://localhost:7860")
+
+# Initialize OpenAI client with LiteLLM proxy
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000/v1")
+API_KEY = os.getenv("API_KEY", "sk-test-key")
+
+client = OpenAI(
+    api_key=API_KEY,
+    base_url=API_BASE_URL
+)
 
 
 def run_task(task_id):
@@ -22,12 +33,43 @@ def run_task(task_id):
     total_reward = 0
 
     while not done and steps < 5:
-        action = {
-            "action_type": "identify",
-            "target": "auto"
-        }
-
         try:
+            # Get current state information
+            state_info = f"Task: {task_id}, Step: {steps + 1}, Total Reward: {total_reward}"
+            
+            # Use LLM to decide next action via LiteLLM proxy
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an incident commander AI assistant. Analyze the current situation and recommend the next action. Return ONLY a JSON object with 'action_type' and 'target' fields. action_type must be one of: identify, fix, notify, map_service. target can be a service name or 'auto'."
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Current state: {state_info}. What should be the next action to resolve this incident?"
+                    }
+                ],
+                temperature=0.7,
+                max_tokens=100
+            )
+            
+            # Parse LLM response
+            llm_response = response.choices[0].message.content
+            try:
+                action_data = json.loads(llm_response)
+                action = {
+                    "action_type": action_data.get("action_type", "identify"),
+                    "target": action_data.get("target", "auto")
+                }
+            except json.JSONDecodeError:
+                # Fallback if JSON parsing fails
+                action = {
+                    "action_type": "identify",
+                    "target": "auto"
+                }
+            
+            # Execute action
             res = requests.post(f"{BASE_URL}/step", json=action)
             data = res.json()
 
