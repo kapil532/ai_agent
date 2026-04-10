@@ -4,34 +4,60 @@ import json
 from openai import OpenAI
 import httpx
 
+# ============================================================================
+# ENVIRONMENT VARIABLE CONFIGURATION (As per submission requirements)
+# ============================================================================
+
 BASE_URL = os.getenv("BASE_URL", "http://localhost:7860")
 
-# Initialize OpenAI client with LiteLLM proxy
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000/v1")
-API_KEY = os.getenv("API_KEY", "sk-test-key")
+# Required: API endpoint for the LLM (with default)
+API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 
-# Initialize client with explicit httpx configuration
+# Required: Model identifier used for inference (with default)
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
+
+# Required: Hugging Face API token (MANDATORY - no default)
+HF_TOKEN = os.getenv("HF_TOKEN")
+if HF_TOKEN is None:
+    raise ValueError("HF_TOKEN environment variable is required for submission")
+
+# Initialize OpenAI client with HF_TOKEN
+client = None
 try:
-    # Create httpx client with explicit configuration
     http_client = httpx.Client(
         timeout=30.0,
-        verify=False,  # Allow self-signed certs for local proxies
+        verify=False,
         limits=httpx.Limits(max_connections=100)
     )
     
     client = OpenAI(
-        api_key=API_KEY,
+        api_key=HF_TOKEN,
         base_url=API_BASE_URL,
         http_client=http_client
     )
 except Exception as e:
-    print(f"[ERROR] Failed to initialize OpenAI client: {e}", flush=True)
+    error_msg = f"Failed to initialize OpenAI client: {e}"
+    print(error_msg, flush=True)
     client = None
 
 
-def run_task(task_id):
-    # Print START block
-    print(f"[START] task={task_id}", flush=True)
+def run_task(task_id, benchmark="openenv"):
+    """
+    Run a single task and emit structured output in the required format.
+    
+    Output format:
+    [START] task=<task_name> env=<benchmark> model=<model_name>
+    [STEP]  step=<n> action=<action_str> reward=<0.00> done=<true|false> error=<msg|null>
+    [END]   success=<true|false> steps=<n> rewards=<r1,r2,...,rn>
+    """
+    
+    # Emit START line
+    print(f"[START] task={task_id} env={benchmark} model={MODEL_NAME}", flush=True)
+    
+    steps_count = 0
+    all_rewards = []
+    last_action_error = None
+    success = False
     
     try:
         # Reset environment
@@ -39,32 +65,35 @@ def run_task(task_id):
         reset_res.raise_for_status()
         reset_data = reset_res.json()
     except Exception as e:
-        print(f"[ERROR] Failed to reset environment: {e}", flush=True)
+        last_action_error = str(e)
+        # Emit END line with failure
+        print(f"[END] success=false steps=0 rewards=", flush=True)
         return 0
     
     done = False
-    steps = 0
-    total_reward = 0
-
-    while not done and steps < 5:
+    steps_count = 0
+    
+    while not done and steps_count < 5:
+        action_str = "identify('auto')"
+        error_msg = None
+        reward = 0.0
+        
         try:
-            # Get current state information
-            state_info = f"Task: {task_id}, Step: {steps + 1}, Total Reward: {total_reward}"
-            
-            # Use LLM to decide next action via LiteLLM proxy
             if client is None:
                 raise RuntimeError("OpenAI client not initialized")
             
+            # Use LLM to generate action
+            state_info = f"Task: {task_id}, Step: {steps_count + 1}"
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model=MODEL_NAME,
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an incident commander AI assistant. Analyze the current situation and recommend the next action. Return ONLY a JSON object with 'action_type' and 'target' fields. action_type must be one of: identify, fix, notify, map_service. target can be a service name or 'auto'."
+                        "content": "You are an incident commander. Recommend ONE action only as JSON: {\"action_type\": \"identify|fix|notify|map_service\", \"target\": \"auto|service_name\"}"
                     },
                     {
                         "role": "user",
-                        "content": f"Current state: {state_info}. What should be the next action to resolve this incident?"
+                        "content": f"Current state: {state_info}. Recommend next action."
                     }
                 ],
                 temperature=0.7,
@@ -75,87 +104,94 @@ def run_task(task_id):
             llm_response = response.choices[0].message.content
             try:
                 action_data = json.loads(llm_response)
-                action = {
-                    "action_type": action_data.get("action_type", "identify"),
-                    "target": action_data.get("target", "auto")
-                }
+                action_type = action_data.get("action_type", "identify")
+                target = action_data.get("target", "auto")
+                action_str = f"{action_type}('{target}')"
             except json.JSONDecodeError:
-                # Fallback if JSON parsing fails
-                action = {
-                    "action_type": "identify",
-                    "target": "auto"
-                }
+                action_type = "identify"
+                target = "auto"
+                action_str = "identify('auto')"
             
             # Execute action
-            res = requests.post(f"{BASE_URL}/step", json=action)
-            data = res.json()
-
-            # Extract reward - handle dict, numeric, or list formats
-            reward = 0
-            if isinstance(data, list) and len(data) > 1:
-                reward_data = data[1]
+            res = requests.post(f"{BASE_URL}/step", json={
+                "action_type": action_type,
+                "target": target
+            })
+            api_data = res.json()
+            
+            # Extract reward (2 decimal places)
+            if isinstance(api_data, list) and len(api_data) > 1:
+                reward_data = api_data[1]
                 if isinstance(reward_data, dict):
-                    # Extract numeric value from dict (e.g., {"value": 0.5})
-                    reward = float(reward_data.get("value", reward_data.get("reward", 0)))
+                    reward = float(reward_data.get("value", reward_data.get("reward", 0.0)))
                 elif isinstance(reward_data, (int, float)):
                     reward = float(reward_data)
-            elif isinstance(data, dict):
-                # Handle dict format with reward key
-                if "reward" in data:
-                    reward_data = data["reward"]
-                    if isinstance(reward_data, dict):
-                        reward = float(reward_data.get("value", 0))
-                    else:
-                        reward = float(reward_data)
+            elif isinstance(api_data, dict) and "reward" in api_data:
+                reward_data = api_data["reward"]
+                if isinstance(reward_data, dict):
+                    reward = float(reward_data.get("value", 0.0))
+                else:
+                    reward = float(reward_data)
+            
+            reward = round(reward, 2)
+            all_rewards.append(reward)
             
             # Extract done status
-            done = False
-            if isinstance(data, list) and len(data) > 2:
-                done = bool(data[2])
-            elif isinstance(data, dict) and "done" in data:
-                done = bool(data["done"])
+            if isinstance(api_data, list) and len(api_data) > 2:
+                done = bool(api_data[2])
+            elif isinstance(api_data, dict) and "done" in api_data:
+                done = bool(api_data["done"])
             
-            steps += 1
-            total_reward += reward
+            steps_count += 1
             
-            # Print STEP block with numeric reward
-            print(f"[STEP] step={steps} reward={reward}", flush=True)
+            # Emit STEP line (with 2 decimal precision)
+            done_str = "true" if done else "false"
+            error_str = error_msg if error_msg else "null"
+            print(f"[STEP]  step={steps_count} action={action_str} reward={reward:.2f} done={done_str} error={error_str}", flush=True)
+            
         except Exception as e:
-            # Log error but continue
-            print(f"[ERROR] Step {steps + 1} failed: {e}", flush=True)
-            steps += 1
+            error_msg = str(e)
+            last_action_error = error_msg
+            steps_count += 1
+            
+            # Emit STEP line with error
+            done_str = "false"
+            print(f"[STEP]  step={steps_count} action={action_str} reward=0.00 done={done_str} error={error_msg}", flush=True)
             break
-
-    # Get score
-    try:
-        score_res = requests.get(f"{BASE_URL}/grader", params={"task_id": task_id})
-        score_res.raise_for_status()
-        score = score_res.json()
-        # Handle both dict and numeric formats
-        if isinstance(score, dict):
-            score = float(score.get("score", score.get("value", 0)))
-        else:
-            score = float(score)
-    except Exception as e:
-        print(f"[ERROR] Failed to get score: {e}", flush=True)
-        score = 0
-
-    # Print END block
-    print(f"[END] task={task_id} score={score} steps={steps}", flush=True)
-
-    return score
+    
+    # Calculate overall success
+    success = len(all_rewards) > 0 and sum(all_rewards) > 0
+    
+    # Format rewards with 2 decimal places
+    if all_rewards:
+        rewards_str = ",".join([f"{r:.2f}" for r in all_rewards])
+    else:
+        rewards_str = ""
+    
+    # Emit END line
+    success_str = "true" if success else "false"
+    print(f"[END]   success={success_str} steps={steps_count} rewards={rewards_str}", flush=True)
+    
+    return sum(all_rewards) if all_rewards else 0.0
 
 
 def main():
+    """
+    Main entry point. Runs all tasks and returns results.
+    """
     try:
         results = {}
-
+        
+        # Run all three difficulty levels
         for task in ["easy", "medium", "hard"]:
-            results[task] = run_task(task)
-
+            score = run_task(task)
+            results[task] = score
+        
         return results
+    
     except Exception as e:
-        print(f"[ERROR] Main loop failed: {e}", flush=True)
+        error_msg = f"Main loop failed: {e}"
+        print(error_msg, flush=True)
         raise
 
 
