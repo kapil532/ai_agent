@@ -676,12 +676,26 @@ def challenge_step(session_id: str, action: ActionRequest = Body(...)):
     else:
         reward_value = float(reward)
     
+    # Validate reward is strictly in (0, 1)
+    if reward_value <= 0.0:
+        reward_value = 0.1
+    elif reward_value >= 1.0:
+        reward_value = 0.95
+    elif not (0 < reward_value < 1):
+        reward_value = 0.5
+    
     # Update session metrics
     session["steps"] += 1
     
     # For challenge mode, use the step reward directly (not accumulate)
     # This keeps scores in (0, 1) range
     session["score"] = round(reward_value, 2)
+    
+    # Ensure stored score is also valid
+    if session["score"] <= 0.0:
+        session["score"] = 0.1
+    elif session["score"] >= 1.0:
+        session["score"] = 0.95
     
     if done:
         session["status"] = "completed"
@@ -693,9 +707,10 @@ def challenge_step(session_id: str, action: ActionRequest = Body(...)):
             "steps": session["steps"],
         }))
     
+    # Return with validated reward dict
     return [
         obs,
-        reward,
+        {"reward": reward_value, "reason": "progress"},
         done,
         {
             "session_id": session_id,

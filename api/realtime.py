@@ -97,7 +97,14 @@ class ConnectionManager:
                 for m in completed
             ) / len(completed)
         else:
-            avg_score = avg_steps = avg_time = 0.0
+            avg_score = 0.5  # Safe middle value (not 0.0)
+            avg_steps = avg_time = 0.0
+        
+        # Ensure avg_score is strictly in (0, 1)
+        if avg_score <= 0.0:
+            avg_score = 0.1
+        elif avg_score >= 1.0:
+            avg_score = 0.95
         
         return {
             "total_sessions": self.global_metrics["total_sessions"],

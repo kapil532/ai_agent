@@ -3,6 +3,10 @@ def compute_reward(action):
     Compute reward for an action.
     All rewards must be strictly in (0, 1) range.
     """
+    # Safely handle invalid action
+    if not isinstance(action, dict):
+        return {"reward": 0.1, "reason": "invalid_action"}
+    
     score = 0.1  # Start at minimum value (not 0)
     
     if action.get("action_type") == "identify":
@@ -17,4 +21,10 @@ def compute_reward(action):
     # Cap at 0.95 to ensure strictly < 1.0
     score = min(score, 0.95)
     
-    return {"reward": score, "reason": "progress"}
+    # Final validation - should never fail but defensive programming
+    if score <= 0.0:
+        score = 0.1
+    elif score >= 1.0:
+        score = 0.95
+    
+    return {"reward": float(score), "reason": "progress"}
