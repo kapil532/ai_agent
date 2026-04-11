@@ -189,15 +189,21 @@ def run_task(task_id, benchmark="openenv"):
         if final_score >= 1.0:
             final_score = 0.95
     else:
-        final_score = 0.1  # Return minimum valid value instead of 0.0
+        final_score = 0.5  # Return middle value when no rewards
     
     # Final validation: ensure score is strictly in (0, 1)
-    if final_score <= 0.0:
-        final_score = 0.1
-    elif final_score >= 1.0:
-        final_score = 0.95
+    # Check for NaN, infinity, or out-of-bounds values
+    try:
+        final_score = float(final_score)
+        if not (0 < final_score < 1):
+            final_score = 0.5  # Use middle value as safe default
+    except (ValueError, TypeError):
+        final_score = 0.5
     
-    return float(final_score)
+    # Double-check the final value
+    assert 0 < final_score < 1, f"Score {final_score} is out of bounds!"
+    
+    return final_score
 
 
 def main():

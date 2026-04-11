@@ -469,15 +469,26 @@ def grader(task_id: str):
         # Final validation: ensure score is strictly in (0, 1)
         if not isinstance(score, (int, float)):
             score = 0.1
-        if score <= 0.0:
+        if score <= 0.0 or score < 0.0001:  # Catch any value <= 0
             score = 0.1
-        elif score >= 1.0:
+        elif score >= 1.0 or score > 0.9999:  # Catch any value >= 1
             score = 0.95
         
         score = float(score)
+        
+        # Verify final score is valid
+        if not (0 < score < 1):
+            score = 0.1  # Fallback to safe minimum value
+        
+        # Log for debugging
+        import sys
+        print(f"[GRADER] task_id={task_id} score={score}", file=sys.stderr, flush=True)
+        
         return {"score": score}
     except Exception as e:
         # Return safe default on any error
+        import sys
+        print(f"[GRADER ERROR] {e}", file=sys.stderr, flush=True)
         return {"score": 0.1}
 
 
