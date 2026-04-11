@@ -29,7 +29,7 @@ class ConnectionManager:
             "session_id": session_id,
             "start_time": time.time(),
             "steps": 0,
-            "score": 0.0,
+            "score": 0.5,  # Initialize with safe middle value (not 0.0)
             "task": "unknown",
             "status": "active",
             "actions": [],

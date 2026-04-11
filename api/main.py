@@ -616,7 +616,7 @@ def reset_challenge(task_id: str = Query("easy"), session_id: Optional[str] = No
         "task_id": task_id,
         "start_time": time.time(),
         "steps": 0,
-        "score": 0.0,
+        "score": 0.5,  # Initialize with safe middle value (not 0.0)
         "challenge_mode": True,
         "status": "active",
     }
@@ -670,8 +670,18 @@ def challenge_step(session_id: str, action: ActionRequest = Body(...)):
     # Execute step
     obs, reward, done, info = env.step({"action_type": action.action_type, "target": action.target})
     
+    # Extract scalar reward from dict
+    if isinstance(reward, dict):
+        reward_value = float(reward.get("reward", 0.1))
+    else:
+        reward_value = float(reward)
+    
+    # Update session metrics
     session["steps"] += 1
-    session["score"] += reward
+    
+    # For challenge mode, use the step reward directly (not accumulate)
+    # This keeps scores in (0, 1) range
+    session["score"] = round(reward_value, 2)
     
     if done:
         session["status"] = "completed"
