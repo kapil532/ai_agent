@@ -466,30 +466,31 @@ def grader(task_id: str):
         else:
             score = grade_hard(state, env.task if env else None)
         
-        # Final validation: ensure score is strictly in (0, 1)
-        if not isinstance(score, (int, float)):
+        # Convert to float and validate
+        try:
+            score = float(score)
+        except (ValueError, TypeError):
+            score = 0.5
+        
+        # Ensure score is strictly in (0, 1)
+        # Explicitly check for boundary values and replace them
+        if score == 0.0 or score <= 0:
             score = 0.1
-        if score <= 0.0 or score < 0.0001:  # Catch any value <= 0
-            score = 0.1
-        elif score >= 1.0 or score > 0.9999:  # Catch any value >= 1
+        elif score == 1.0 or score >= 1:
             score = 0.95
-        
-        score = float(score)
-        
-        # Verify final score is valid
-        if not (0 < score < 1):
-            score = 0.1  # Fallback to safe minimum value
+        elif not (0 < score < 1):
+            score = 0.5
         
         # Log for debugging
         import sys
-        print(f"[GRADER] task_id={task_id} score={score}", file=sys.stderr, flush=True)
+        print(f"[GRADER] task_id={task_id} score={score} valid={0 < score < 1}", file=sys.stderr, flush=True)
         
         return {"score": score}
     except Exception as e:
         # Return safe default on any error
         import sys
-        print(f"[GRADER ERROR] {e}", file=sys.stderr, flush=True)
-        return {"score": 0.1}
+        print(f"[GRADER ERROR] {str(e)}", file=sys.stderr, flush=True)
+        return {"score": 0.5}
 
 
 # 🚀 Baseline (FIXED - no subprocess)

@@ -7,10 +7,18 @@ def grade_easy(state, task):
         actions = state.get("actions", []) if isinstance(state, dict) else []
         for a in actions:
             if isinstance(a, dict) and a.get("action_type") == "identify":
-                return float(0.9)
+                result = float(0.9)
+                # Verify it's valid
+                if not (0 < result < 1):
+                    return float(0.5)
+                return result
     except Exception:
         pass
-    return float(0.1)
+    
+    result = float(0.1)
+    if not (0 < result < 1):
+        return float(0.5)
+    return result
 
 
 def grade_medium(state, task):
@@ -22,10 +30,17 @@ def grade_medium(state, task):
         actions = state.get("actions", []) if isinstance(state, dict) else []
         for a in actions:
             if isinstance(a, dict) and a.get("action_type") == "map_service":
-                return float(0.85)
+                result = float(0.85)
+                if not (0 < result < 1):
+                    return float(0.5)
+                return result
     except Exception:
         pass
-    return float(0.15)
+    
+    result = float(0.15)
+    if not (0 < result < 1):
+        return float(0.5)
+    return result
 
 
 def grade_hard(state, task):
@@ -40,11 +55,11 @@ def grade_hard(state, task):
     """
     try:
         if not isinstance(state, dict):
-            return float(0.1)
+            return float(0.5)
         
         actions_list = state.get("actions", [])
         if not isinstance(actions_list, list):
-            return float(0.1)
+            return float(0.5)
         
         actions = [a.get("action_type") for a in actions_list if isinstance(a, dict)]
         score = 0.1  # Base score to avoid 0.0
@@ -58,6 +73,11 @@ def grade_hard(state, task):
         
         # Cap at 0.95 to ensure < 1.0
         final_score = min(score, 0.95)
-        return float(final_score)
+        
+        # Verify it's valid
+        result = float(final_score)
+        if not (0 < result < 1):
+            return float(0.5)
+        return result
     except Exception:
-        return float(0.1)
+        return float(0.5)

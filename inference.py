@@ -182,28 +182,21 @@ def run_task(task_id, benchmark="openenv"):
     success_str = "true" if success else "false"
     print(f"[END]   success={success_str} steps={steps_count} rewards={rewards_str}", flush=True)
     
-    # Return a properly bounded score
+    # Calculate final score
     if all_rewards:
         final_score = sum(all_rewards)
-        # If sum exceeds 1.0, normalize it but keep it < 1.0
-        if final_score >= 1.0:
-            final_score = 0.95
     else:
-        final_score = 0.5  # Return middle value when no rewards
+        final_score = 0.5  # Safe middle value when no rewards
     
-    # Final validation: ensure score is strictly in (0, 1)
-    # Check for NaN, infinity, or out-of-bounds values
-    try:
-        final_score = float(final_score)
-        if not (0 < final_score < 1):
-            final_score = 0.5  # Use middle value as safe default
-    except (ValueError, TypeError):
+    # Ensure score is strictly in (0, 1)
+    if final_score == 0.0 or final_score <= 0:
+        final_score = 0.1
+    elif final_score == 1.0 or final_score >= 1:
+        final_score = 0.95
+    elif not (0 < final_score < 1):
         final_score = 0.5
     
-    # Double-check the final value
-    assert 0 < final_score < 1, f"Score {final_score} is out of bounds!"
-    
-    return final_score
+    return float(final_score)
 
 
 def main():
