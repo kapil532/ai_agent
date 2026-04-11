@@ -27,4 +27,9 @@ def compute_reward(action):
     elif score >= 1.0:
         score = 0.95
     
-    return {"reward": float(score), "reason": "progress"}
+    # EXTREME defensive: Final explicit check for exact values
+    score = float(score)
+    if score == 0.0 or score == 1.0:
+        score = 0.5  # Safe fallback
+    
+    return {"reward": score, "reason": "progress"}

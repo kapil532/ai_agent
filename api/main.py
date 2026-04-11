@@ -490,11 +490,19 @@ def grader(task_id: str):
         elif score >= 1.0:
             score = 0.95
         
+        # EXTREME defensive: Final explicit check for exact values
+        score = float(score)
+        if score == 0.0 or score == 1.0:
+            score = 0.5  # Safe fallback
+        
+        # PARANOIA CHECK: Ensure strictly in range
+        assert 0 < score < 1, f"FATAL: Grader score {score} is out of range!"
+        
         # Log for debugging
         import sys
         print(f"[GRADER] task_id={task_id} score={score} valid={0 < score < 1}", file=sys.stderr, flush=True)
         
-        return {"score": score}
+        return {"score": float(score)}
     except Exception as e:
         # Return safe default on any error
         import sys
@@ -705,6 +713,11 @@ def challenge_step(session_id: str, action: ActionRequest = Body(...)):
         session["score"] = 0.1
     elif session["score"] >= 1.0:
         session["score"] = 0.95
+    
+    # EXTREME defensive: Final explicit check for exact values
+    session["score"] = float(session["score"])
+    if session["score"] == 0.0 or session["score"] == 1.0:
+        session["score"] = 0.5  # Safe fallback
     
     if done:
         session["status"] = "completed"

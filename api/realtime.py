@@ -106,6 +106,11 @@ class ConnectionManager:
         elif avg_score >= 1.0:
             avg_score = 0.95
         
+        # EXTREME defensive: Reject exact boundary values
+        avg_score = float(avg_score)
+        if avg_score == 0.0 or avg_score == 1.0:
+            avg_score = 0.5  # Safe fallback
+        
         return {
             "total_sessions": self.global_metrics["total_sessions"],
             "active_sessions": len(self.active_connections),

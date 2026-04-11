@@ -217,7 +217,15 @@ def run_task(task_id, benchmark="openenv"):
     elif final_score >= 1.0:
         final_score = 0.95
     
-    return float(final_score)
+    # EXTREME defensive: Final explicit check for exact values
+    final_score = float(final_score)
+    if final_score == 0.0 or final_score == 1.0:
+        final_score = 0.5  # Safe fallback
+    
+    # PARANOIA CHECK: Ensure strictly in range
+    assert 0 < final_score < 1, f"FATAL: Score {final_score} is out of range!"
+    
+    return final_score
 
 
 def main():

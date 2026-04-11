@@ -11,12 +11,18 @@ def grade_easy(state, task):
                 # Verify it's valid
                 if not (0 < result < 1):
                     return float(0.5)
+                # EXTREME defensive: Reject exact boundary values
+                if result == 0.0 or result == 1.0:
+                    return float(0.5)
                 return result
     except Exception:
         pass
     
     result = float(0.1)
     if not (0 < result < 1):
+        return float(0.5)
+    # EXTREME defensive: Reject exact boundary values
+    if result == 0.0 or result == 1.0:
         return float(0.5)
     return result
 
@@ -33,12 +39,18 @@ def grade_medium(state, task):
                 result = float(0.85)
                 if not (0 < result < 1):
                     return float(0.5)
+                # EXTREME defensive: Reject exact boundary values
+                if result == 0.0 or result == 1.0:
+                    return float(0.5)
                 return result
     except Exception:
         pass
     
     result = float(0.15)
     if not (0 < result < 1):
+        return float(0.5)
+    # EXTREME defensive: Reject exact boundary values
+    if result == 0.0 or result == 1.0:
         return float(0.5)
     return result
 
@@ -78,6 +90,11 @@ def grade_hard(state, task):
         result = float(final_score)
         if not (0 < result < 1):
             return float(0.5)
+        
+        # EXTREME defensive: Reject exact boundary values
+        if result == 0.0 or result == 1.0:
+            return float(0.5)
+        
         return result
     except Exception:
         return float(0.5)
