@@ -7,10 +7,10 @@ def grade_easy(state, task):
         actions = state.get("actions", []) if isinstance(state, dict) else []
         for a in actions:
             if isinstance(a, dict) and a.get("action_type") == "identify":
-                return 0.9
+                return float(0.9)
     except Exception:
         pass
-    return 0.1
+    return float(0.1)
 
 
 def grade_medium(state, task):
@@ -22,10 +22,10 @@ def grade_medium(state, task):
         actions = state.get("actions", []) if isinstance(state, dict) else []
         for a in actions:
             if isinstance(a, dict) and a.get("action_type") == "map_service":
-                return 0.85
+                return float(0.85)
     except Exception:
         pass
-    return 0.15
+    return float(0.15)
 
 
 def grade_hard(state, task):
@@ -40,11 +40,11 @@ def grade_hard(state, task):
     """
     try:
         if not isinstance(state, dict):
-            return 0.1
+            return float(0.1)
         
         actions_list = state.get("actions", [])
         if not isinstance(actions_list, list):
-            return 0.1
+            return float(0.1)
         
         actions = [a.get("action_type") for a in actions_list if isinstance(a, dict)]
         score = 0.1  # Base score to avoid 0.0
@@ -57,6 +57,7 @@ def grade_hard(state, task):
             score += 0.25
         
         # Cap at 0.95 to ensure < 1.0
-        return min(score, 0.95)
+        final_score = min(score, 0.95)
+        return float(final_score)
     except Exception:
-        return 0.1
+        return float(0.1)

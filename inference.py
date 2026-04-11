@@ -182,13 +182,22 @@ def run_task(task_id, benchmark="openenv"):
     success_str = "true" if success else "false"
     print(f"[END]   success={success_str} steps={steps_count} rewards={rewards_str}", flush=True)
     
-    # Return sum of rewards, or minimum valid value if no rewards
+    # Return a properly bounded score
     if all_rewards:
         final_score = sum(all_rewards)
+        # If sum exceeds 1.0, normalize it but keep it < 1.0
+        if final_score >= 1.0:
+            final_score = 0.95
     else:
         final_score = 0.1  # Return minimum valid value instead of 0.0
     
-    return final_score
+    # Final validation: ensure score is strictly in (0, 1)
+    if final_score <= 0.0:
+        final_score = 0.1
+    elif final_score >= 1.0:
+        final_score = 0.95
+    
+    return float(final_score)
 
 
 def main():
