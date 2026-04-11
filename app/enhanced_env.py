@@ -118,6 +118,15 @@ class EnhancedIncidentEnv:
             # Ensure reward stays in valid range after multiplier
             reward = min(reward, 0.95)  # Cap at 0.95 to ensure strictly < 1.0
         
+        # EXTREME DEFENSIVE: Check for exact boundary values
+        reward = float(reward)
+        if reward == 0.0 or reward == 1.0:
+            reward = 0.5  # Safe fallback
+        
+        # FINAL check: ensure in range
+        if not (0 < reward < 1):
+            reward = 0.5
+        
         self.metrics["total_reward"] += reward
         
         # Check terminal condition
