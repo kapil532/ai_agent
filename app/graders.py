@@ -3,9 +3,13 @@ def grade_easy(state, task):
     Easy task: Identify the issue (action_type == "identify")
     Score strictly between 0 and 1: 0.9 if successful, 0.1 if failed
     """
-    for a in state["actions"]:
-        if a["action_type"] == "identify":
-            return 0.9
+    try:
+        actions = state.get("actions", []) if isinstance(state, dict) else []
+        for a in actions:
+            if isinstance(a, dict) and a.get("action_type") == "identify":
+                return 0.9
+    except Exception:
+        pass
     return 0.1
 
 
@@ -14,9 +18,13 @@ def grade_medium(state, task):
     Medium task: Map the affected service (action_type == "map_service")
     Score strictly between 0 and 1: 0.85 if successful, 0.15 if failed
     """
-    for a in state["actions"]:
-        if a["action_type"] == "map_service":
-            return 0.85
+    try:
+        actions = state.get("actions", []) if isinstance(state, dict) else []
+        for a in actions:
+            if isinstance(a, dict) and a.get("action_type") == "map_service":
+                return 0.85
+    except Exception:
+        pass
     return 0.15
 
 
@@ -30,15 +38,25 @@ def grade_hard(state, task):
     - notify: +0.25 (up to 0.95)
     This ensures score is always in (0, 1) range
     """
-    actions = [a["action_type"] for a in state["actions"]]
-    score = 0.1  # Base score to avoid 0.0
-    
-    if "identify" in actions:
-        score += 0.25
-    if "fix" in actions:
-        score += 0.35
-    if "notify" in actions:
-        score += 0.25
-    
-    # Cap at 0.95 to ensure < 1.0
-    return min(score, 0.95)
+    try:
+        if not isinstance(state, dict):
+            return 0.1
+        
+        actions_list = state.get("actions", [])
+        if not isinstance(actions_list, list):
+            return 0.1
+        
+        actions = [a.get("action_type") for a in actions_list if isinstance(a, dict)]
+        score = 0.1  # Base score to avoid 0.0
+        
+        if "identify" in actions:
+            score += 0.25
+        if "fix" in actions:
+            score += 0.35
+        if "notify" in actions:
+            score += 0.25
+        
+        # Cap at 0.95 to ensure < 1.0
+        return min(score, 0.95)
+    except Exception:
+        return 0.1

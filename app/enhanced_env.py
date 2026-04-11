@@ -33,19 +33,21 @@ class ChallengeMode:
         return max(0, limit - elapsed)
     
     def get_time_bonus(self) -> float:
-        """Compute time-based score multiplier (faster = better)."""
+        """Compute time-based score multiplier (faster = better).
+        Returns values strictly in (0.5, 1.5] to avoid boundary values.
+        """
         elapsed = time.time() - self.start_time
         limit = self.time_limits.get(self.task_id, 120)
         time_ratio = elapsed / limit
         
         if time_ratio < 0.25:
-            return 1.5  # 50% bonus for speed
+            return 1.4  # High bonus for speed (avoid 1.5)
         elif time_ratio < 0.5:
-            return 1.25
+            return 1.2
         elif time_ratio < 0.75:
-            return 1.0
+            return 0.95
         else:
-            return 0.75
+            return 0.8  # Penalty for slowness (avoid 0.75)
 
 
 class EnhancedIncidentEnv:

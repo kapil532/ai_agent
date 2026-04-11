@@ -182,7 +182,13 @@ def run_task(task_id, benchmark="openenv"):
     success_str = "true" if success else "false"
     print(f"[END]   success={success_str} steps={steps_count} rewards={rewards_str}", flush=True)
     
-    return sum(all_rewards) if all_rewards else 0.0
+    # Return sum of rewards, or minimum valid value if no rewards
+    if all_rewards:
+        final_score = sum(all_rewards)
+    else:
+        final_score = 0.1  # Return minimum valid value instead of 0.0
+    
+    return final_score
 
 
 def main():
