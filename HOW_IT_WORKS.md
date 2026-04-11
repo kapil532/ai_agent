@@ -121,7 +121,7 @@ Internal tracking:
       "task_id": "medium",
       "start_time": 1234567885,
       "steps": 3,
-      "score": 1.8,
+      "score": 0.65,
       "status": "active"
     }
   }
@@ -130,7 +130,7 @@ Internal tracking:
 ### 4️⃣ Time Limit Expires or Agent Finishes
 ```
 If time expires:
-  Response: [obs, 0.0, true, {"reason": "time_expired"}]
+  Response: [obs, 0.1, true, {"reason": "time_expired"}]
   Session marked: "completed"
   Score recorded: final_score
 
@@ -146,12 +146,12 @@ If agent completes task:
 
 ### 🏆 Live Leaderboard
 ```
-Agent 1 (fast):     Score: 2.85  ⭐ Rank #1
+Agent 1 (fast):     Score: 0.85  ⭐ Rank #1
   - Task: hard
   - Time: 45s (40% of limit = 1.5x bonus!)
   - Steps: 4
 
-Agent 2 (steady):   Score: 2.10  ⭐ Rank #2
+Agent 2 (steady):   Score: 0.65  ⭐ Rank #2
   - Task: medium
   - Time: 120s (exactly on time = 1.0x)
   - Steps: 3
@@ -171,7 +171,7 @@ Returns:
   "total_sessions": 42,
   "active_sessions": 5,
   "completed_sessions": 37,
-  "avg_score": 1.87,
+  "avg_score": 0.65,
   "avg_steps": 3.5,
   "avg_completion_time": 98.3,
   "leaderboard": [...]
@@ -189,9 +189,9 @@ Returns:
   "status": "completed",
   "metrics": {
     "steps": 4,
-    "score": 2.85,
+    "score": 0.75,
     "time_elapsed": 45.2,
-    "efficiency": 0.7125,    ← score/steps
+    "efficiency": 0.1875,    ← score/steps
     "step_rate": 0.0884      ← steps/second
   },
   "ranking": {
@@ -240,7 +240,7 @@ On score update:
     "type": "session_update",
     "session_id": "abc-123",
     "metrics": {
-      "score": 2.85,
+      "score": 0.75,
       "steps": 4,
       "rank": 1
     }
@@ -380,8 +380,8 @@ Scenario 3: Complete in 250s (83% of time)
 ┌─────────────────────────────────────────────┐
 │  4. Leaderboard updates every 2s            │
 │                                             │
-│  #1: Agent 1 (Score: 1.85, Time: 45s)      │
-│  #2: Agent 2 (Score: 1.20, Time: 78s)      │
+│  #1: Agent 1 (Score: 0.85, Time: 45s)      │
+│  #2: Agent 2 (Score: 0.70, Time: 78s)      │
 │                                             │
 │  Both agents see live updates!              │
 └─────────────────────────────────────────────┘

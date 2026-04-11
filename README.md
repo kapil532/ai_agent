@@ -153,7 +153,7 @@ docker run -p 7860:7860 incident-commander
 
 ```python
 {
-  "score": float,    # 0.0 to 1.0
+  "score": float,    # Strictly between 0 and 1 (not 0.0, not 1.0)
   "reason": str      # Explanation
 }
 ```
@@ -162,7 +162,7 @@ docker run -p 7860:7860 incident-commander
 - `identify` action: +0.3 (hypothesis confirmation)
 - `fix` action: +0.4 (problem resolution)
 - `notify` action: +0.3 (stakeholder communication)
-- Task completion reward: 1.0 (full score achieved)
+- Task completion reward: 0.95 (high score achieved)
 
 ## API Endpoints
 
@@ -218,20 +218,28 @@ The random baseline agent (takes `identify` actions repeatedly):
 
 | Task | Expected Score |
 |------|-----------------|
-| easy | 1.0 |
-| medium | 0.0 |
-| hard | 0.3 |
+| easy | 0.9 |
+| medium | 0.15 |
+| hard | 0.35 |
 
 Run baseline:
 ```bash
 python inference.py
 ```
 
-Expected output:
+Expected output (with valid LLM credentials):
 ```
-easy {'score': 1.0}
-medium {'score': 0.0}
-hard {'score': 0.3}
+[START] task=easy env=openenv model=gpt-3.5-turbo
+[STEP]  step=1 action=identify('auto') reward=0.90 done=false error=null
+[END]   success=true steps=1 rewards=0.90
+
+[START] task=medium env=openenv model=gpt-3.5-turbo
+[STEP]  step=1 action=identify('auto') reward=0.15 done=false error=null
+[END]   success=true steps=1 rewards=0.15
+
+[START] task=hard env=openenv model=gpt-3.5-turbo
+[STEP]  step=1 action=identify('auto') reward=0.35 done=false error=null
+[END]   success=true steps=1 rewards=0.35
 ```
 
 ## Interactive UI

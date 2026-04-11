@@ -40,7 +40,7 @@ curl "http://localhost:7860/leaderboard?limit=10"
   "leaderboard": [
     {
       "session_id": "abc-123...",
-      "score": 2.85,
+      "score": 0.85,
       "task": "hard",
       "duration": 145.23,
       "steps": 4
@@ -118,9 +118,9 @@ curl "http://localhost:7860/analytics/SESSION_ID"
   "status": "completed",
   "metrics": {
     "steps": 4,
-    "score": 2.85,
+    "score": 0.75,
     "time_elapsed": 145.23,
-    "efficiency": 0.7125,
+    "efficiency": 0.1875,
     "step_rate": 0.0275
   },
   "ranking": {
