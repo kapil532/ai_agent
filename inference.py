@@ -182,9 +182,10 @@ def run_task(task_id, benchmark="openenv"):
     success_str = "true" if success else "false"
     print(f"[END]   success={success_str} steps={steps_count} rewards={rewards_str}", flush=True)
     
-    # Calculate final score
+    # Calculate final score - use average to stay strictly in (0, 1)
     if all_rewards:
-        final_score = sum(all_rewards)
+        # Average the rewards to keep score in valid range
+        final_score = sum(all_rewards) / len(all_rewards)
     else:
         final_score = 0.5  # Safe middle value when no rewards
     
