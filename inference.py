@@ -123,7 +123,11 @@ def run_task(task_id, benchmark="openenv"):
             if isinstance(api_data, list) and len(api_data) > 1:
                 reward_data = api_data[1]
                 if isinstance(reward_data, dict):
-                    reward = float(reward_data.get("value", reward_data.get("reward", 0.1)))
+                    # Try "value" key first, then "reward" key, then default to 0.1
+                    reward = reward_data.get("value")
+                    if reward is None:
+                        reward = reward_data.get("reward", 0.1)
+                    reward = float(reward)
                 elif isinstance(reward_data, (int, float)):
                     reward = float(reward_data)
                 else:
@@ -131,7 +135,11 @@ def run_task(task_id, benchmark="openenv"):
             elif isinstance(api_data, dict) and "reward" in api_data:
                 reward_data = api_data["reward"]
                 if isinstance(reward_data, dict):
-                    reward = float(reward_data.get("value", reward_data.get("reward", 0.1)))
+                    # Try "value" key first, then "reward" key, then default to 0.1
+                    reward = reward_data.get("value")
+                    if reward is None:
+                        reward = reward_data.get("reward", 0.1)
+                    reward = float(reward)
                 elif isinstance(reward_data, (int, float)):
                     reward = float(reward_data)
                 else:
