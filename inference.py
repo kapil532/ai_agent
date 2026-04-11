@@ -68,7 +68,7 @@ def run_task(task_id, benchmark="openenv"):
         last_action_error = str(e)
         # Emit END line with failure
         print(f"[END] success=false steps=0 rewards=", flush=True)
-        return 0
+        return 0.1  # Return minimum valid score instead of 0
     
     done = False
     steps_count = 0
