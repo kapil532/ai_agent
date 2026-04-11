@@ -132,15 +132,17 @@ def run_task(task_id, benchmark="openenv"):
                 reward_data = api_data["reward"]
                 if isinstance(reward_data, dict):
                     reward = float(reward_data.get("value", reward_data.get("reward", 0.1)))
-                else:
+                elif isinstance(reward_data, (int, float)):
                     reward = float(reward_data)
+                else:
+                    reward = 0.1
             else:
                 reward = 0.1
             
-            # Ensure reward is strictly in (0, 1)
-            if reward <= 0.0:
+            # Immediate validation right after extraction - NO boundary values allowed
+            if reward <= 0.0:  # Catch 0.0 and negative values
                 reward = 0.1
-            elif reward >= 1.0:
+            elif reward >= 1.0:  # Catch 1.0 and values >= 1
                 reward = 0.95
             
             reward = round(reward, 2)
