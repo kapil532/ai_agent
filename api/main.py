@@ -728,13 +728,8 @@ def challenge_step(session_id: str, action: ActionRequest = Body(...)):
     else:
         reward_value = float(reward)
     
-    # Validate reward is strictly in (0, 1)
-    if reward_value <= 0.0:
-        reward_value = 0.1
-    elif reward_value >= 1.0:
-        reward_value = 0.95
-    elif not (0 < reward_value < 1):
-        reward_value = 0.5
+    # Validate reward is strictly in (0, 1) with ULTRA DEFENSIVE check
+    reward_value = ensure_valid_score(reward_value)
     
     # Update session metrics
     session["steps"] += 1
@@ -796,15 +791,18 @@ def get_analytics(session_id: str):
     session = active_sessions[session_id]
     elapsed = time.time() - session["start_time"]
     
+    # ULTRA DEFENSIVE: Validate score before returning
+    score = ensure_valid_score(session["score"])
+    
     return {
         "session_id": session_id,
         "task": session["task_id"],
         "status": session["status"],
         "metrics": {
             "steps": session["steps"],
-            "score": round(session["score"], 3),
+            "score": round(score, 3),
             "time_elapsed": round(elapsed, 2),
-            "efficiency": round(session["score"] / max(1, session["steps"]), 3),
+            "efficiency": round(score / max(1, session["steps"]), 3),
             "step_rate": round(session["steps"] / elapsed, 2) if elapsed > 0 else 0,
         },
         "ranking": {

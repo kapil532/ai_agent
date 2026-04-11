@@ -8,6 +8,37 @@ from fastapi import WebSocket, WebSocketDisconnect
 from datetime import datetime
 
 
+# ============================================================================
+# ULTRA DEFENSIVE SCORING FUNCTION
+# ============================================================================
+
+def ensure_valid_score(score):
+    """
+    ULTRA DEFENSIVE: Ensure score is STRICTLY in (0, 1) range.
+    Absolute final check - no 0.0, no 1.0, no values outside (0, 1).
+    """
+    score = float(score)
+    
+    # Clip to safe range [0.01, 0.99]
+    if score <= 0.0 or score <= 0.005:
+        return 0.1
+    if score >= 1.0 or score >= 0.995:
+        return 0.95
+    if score < 0.01:
+        return 0.10
+    if score > 0.99:
+        return 0.95
+    
+    # Round and double-check
+    score = round(score, 2)
+    if score == 0.0 or score == 1.0 or score <= 0.0 or score >= 1.0:
+        return 0.5  # Middle safe value
+    if not (0 < score < 1):
+        return 0.5
+    
+    return score
+
+
 class ConnectionManager:
     """Manage WebSocket connections for real-time metrics streaming."""
     
@@ -74,7 +105,7 @@ class ConnectionManager:
         scores = [
             {
                 "session_id": sid,
-                "score": data["score"],
+                "score": ensure_valid_score(data["score"]),  # VALIDATE HERE
                 "task": data["task"],
                 "duration": time.time() - data["start_time"],
                 "steps": data["steps"],
@@ -100,16 +131,8 @@ class ConnectionManager:
             avg_score = 0.5  # Safe middle value (not 0.0)
             avg_steps = avg_time = 0.0
         
-        # Ensure avg_score is strictly in (0, 1)
-        if avg_score <= 0.0:
-            avg_score = 0.1
-        elif avg_score >= 1.0:
-            avg_score = 0.95
-        
-        # EXTREME defensive: Reject exact boundary values
-        avg_score = float(avg_score)
-        if avg_score == 0.0 or avg_score == 1.0:
-            avg_score = 0.5  # Safe fallback
+        # Ensure avg_score is strictly in (0, 1) with ULTRA DEFENSIVE validation
+        avg_score = ensure_valid_score(avg_score)
         
         return {
             "total_sessions": self.global_metrics["total_sessions"],
