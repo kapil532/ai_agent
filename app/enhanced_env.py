@@ -98,7 +98,7 @@ class EnhancedIncidentEnv:
             self.done = True
             return [
                 self.state_obj.get_observation(),
-                0.0,
+                {"reward": 0.1, "reason": "time_expired"},
                 True,
                 {"reason": "time_expired", "challenge": True}
             ]
@@ -109,11 +109,14 @@ class EnhancedIncidentEnv:
         self.metrics["actions_taken"].append(action)
         
         # Compute reward
-        reward = compute_reward(action)
+        reward_dict = compute_reward(action)
+        reward = reward_dict["reward"]  # Extract scalar value from dict
         
         # Apply time bonus if in challenge mode
         if self.challenge:
             reward *= self.challenge.get_time_bonus()
+            # Ensure reward stays in valid range after multiplier
+            reward = min(reward, 0.95)  # Cap at 0.95 to ensure strictly < 1.0
         
         self.metrics["total_reward"] += reward
         
@@ -123,7 +126,7 @@ class EnhancedIncidentEnv:
         
         return [
             self.state_obj.get_observation(),
-            reward,
+            {"reward": reward, "reason": "progress"},  # Return as dict for consistency
             self.done,
             {
                 "step": self.metrics["step_count"],
