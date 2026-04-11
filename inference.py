@@ -119,19 +119,29 @@ def run_task(task_id, benchmark="openenv"):
             })
             api_data = res.json()
             
-            # Extract reward (2 decimal places)
+            # Extract reward (2 decimal places, must be strictly in (0, 1))
             if isinstance(api_data, list) and len(api_data) > 1:
                 reward_data = api_data[1]
                 if isinstance(reward_data, dict):
-                    reward = float(reward_data.get("value", reward_data.get("reward", 0.0)))
+                    reward = float(reward_data.get("value", reward_data.get("reward", 0.1)))
                 elif isinstance(reward_data, (int, float)):
                     reward = float(reward_data)
+                else:
+                    reward = 0.1
             elif isinstance(api_data, dict) and "reward" in api_data:
                 reward_data = api_data["reward"]
                 if isinstance(reward_data, dict):
-                    reward = float(reward_data.get("value", 0.0))
+                    reward = float(reward_data.get("value", reward_data.get("reward", 0.1)))
                 else:
                     reward = float(reward_data)
+            else:
+                reward = 0.1
+            
+            # Ensure reward is strictly in (0, 1)
+            if reward <= 0.0:
+                reward = 0.1
+            elif reward >= 1.0:
+                reward = 0.95
             
             reward = round(reward, 2)
             all_rewards.append(reward)

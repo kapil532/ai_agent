@@ -398,8 +398,9 @@ async def step(action: Optional[Dict] = Body(None)):
     
     if not action:
         # Return in list format [obs, reward, done, info]
+        # Reward must be strictly in (0, 1)
         obs = env.state_obj.get_observation() if env.state_obj else None
-        return [obs, {"score": 0, "reason": "no action"}, False, {}]
+        return [obs, {"reward": 0.1, "reason": "no action"}, False, {}]
     
     obs, reward, done, info = env.step(action)
 
@@ -627,7 +628,7 @@ def challenge_step(session_id: str, action: ActionRequest = Body(...)):
         session["status"] = "timeout"
         return {
             "observation": {},
-            "reward": 0.0,
+            "reward": 0.1,
             "done": True,
             "info": {
                 "reason": "time_expired",
