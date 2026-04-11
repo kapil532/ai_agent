@@ -76,7 +76,7 @@ def run_task(task_id, benchmark="openenv"):
     while not done and steps_count < 5:
         action_str = "identify('auto')"
         error_msg = None
-        reward = 0.0
+        reward = 0.1  # Default error reward (minimum value, strictly in (0, 1))
         
         try:
             if client is None:
@@ -154,9 +154,9 @@ def run_task(task_id, benchmark="openenv"):
             last_action_error = error_msg
             steps_count += 1
             
-            # Emit STEP line with error
+            # Emit STEP line with error (reward must be in (0, 1), use 0.10 for errors)
             done_str = "false"
-            print(f"[STEP]  step={steps_count} action={action_str} reward=0.00 done={done_str} error={error_msg}", flush=True)
+            print(f"[STEP]  step={steps_count} action={action_str} reward=0.10 done={done_str} error={error_msg}", flush=True)
             break
     
     # Calculate overall success
