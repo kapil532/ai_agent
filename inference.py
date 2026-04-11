@@ -189,13 +189,23 @@ def run_task(task_id, benchmark="openenv"):
     else:
         final_score = 0.5  # Safe middle value when no rewards
     
-    # Ensure score is strictly in (0, 1)
-    if final_score == 0.0 or final_score <= 0:
+    # Ensure score is strictly in (0, 1) - use stricter checks
+    # Check BEFORE rounding first
+    if final_score <= 0.0:
         final_score = 0.1
-    elif final_score == 1.0 or final_score >= 1:
+    elif final_score >= 1.0:
         final_score = 0.95
     elif not (0 < final_score < 1):
         final_score = 0.5
+    
+    # Round to 2 decimal places (can't produce 0.0 or 1.0 from (0,1) range)
+    final_score = round(final_score, 2)
+    
+    # FINAL validation after rounding to catch any edge cases
+    if final_score <= 0.0:
+        final_score = 0.1
+    elif final_score >= 1.0:
+        final_score = 0.95
     
     return float(final_score)
 

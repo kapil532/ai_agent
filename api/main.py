@@ -481,6 +481,15 @@ def grader(task_id: str):
         elif not (0 < score < 1):
             score = 0.5
         
+        # Round to 2 decimal places for consistency
+        score = round(score, 2)
+        
+        # Final validation after rounding
+        if score <= 0.0:
+            score = 0.1
+        elif score >= 1.0:
+            score = 0.95
+        
         # Log for debugging
         import sys
         print(f"[GRADER] task_id={task_id} score={score} valid={0 < score < 1}", file=sys.stderr, flush=True)
