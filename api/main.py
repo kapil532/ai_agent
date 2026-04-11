@@ -673,13 +673,6 @@ def reset_challenge(task_id: str = Query("easy"), session_id: Optional[str] = No
         "status": "active",
     }
     
-    # Notify leaderboard subscribers
-    import asyncio
-    asyncio.create_task(manager.update_session(session_id, {
-        "task": task_id,
-        "status": "active",
-    }))
-    
     return {
         "session_id": session_id,
         "observation": obs,
@@ -743,13 +736,6 @@ def challenge_step(session_id: str, action: ActionRequest = Body(...)):
     
     if done:
         session["status"] = "completed"
-        # Update leaderboard
-        import asyncio
-        asyncio.create_task(manager.update_session(session_id, {
-            "score": session["score"],
-            "status": "completed",
-            "steps": session["steps"],
-        }))
     
     # Return with validated reward dict
     return [
