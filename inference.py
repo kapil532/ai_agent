@@ -5,6 +5,37 @@ from openai import OpenAI
 import httpx
 
 # ============================================================================
+# ULTRA DEFENSIVE SCORING FUNCTION
+# ============================================================================
+
+def ensure_valid_score(score):
+    """
+    ULTRA DEFENSIVE: Ensure score is STRICTLY in (0, 1) range.
+    Absolute final check - no 0.0, no 1.0, no values outside (0, 1).
+    """
+    score = float(score)
+    
+    # Clip to safe range [0.01, 0.99]
+    if score <= 0.0 or score <= 0.005:
+        return 0.1
+    if score >= 1.0 or score >= 0.995:
+        return 0.95
+    if score < 0.01:
+        return 0.10
+    if score > 0.99:
+        return 0.95
+    
+    # Round and double-check
+    score = round(score, 2)
+    if score == 0.0 or score == 1.0 or score <= 0.0 or score >= 1.0:
+        return 0.5  # Middle safe value
+    if not (0 < score < 1):
+        return 0.5
+    
+    return score
+
+
+# ============================================================================
 # ENVIRONMENT VARIABLE CONFIGURATION (As per submission requirements)
 # ============================================================================
 
@@ -234,6 +265,9 @@ def run_task(task_id, benchmark="openenv"):
     # FINAL validation: If still not in range, use safe default
     if not (0 < final_score < 1):
         final_score = 0.5
+    
+    # ABSOLUTE FINAL CHECK: Use ultra-defensive validation
+    final_score = ensure_valid_score(final_score)
     
     return final_score
 

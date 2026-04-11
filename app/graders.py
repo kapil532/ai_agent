@@ -1,3 +1,30 @@
+def ensure_valid_score(score):
+    """
+    ULTRA DEFENSIVE: Ensure score is STRICTLY in (0, 1) range.
+    No 0.0, no 1.0, no values outside.
+    """
+    score = float(score)
+    
+    # Clip to safe range [0.01, 0.99]
+    if score <= 0.0 or score <= 0.005:
+        return 0.1
+    if score >= 1.0 or score >= 0.995:
+        return 0.95
+    if score < 0.01:
+        return 0.10
+    if score > 0.99:
+        return 0.95
+    
+    # Round and double-check
+    score = round(score, 2)
+    if score == 0.0 or score == 1.0 or score <= 0.0 or score >= 1.0:
+        return 0.5  # Middle safe value
+    if not (0 < score < 1):
+        return 0.5
+    
+    return score
+
+
 def grade_easy(state, task):
     """
     Easy task: Identify the issue (action_type == "identify")
@@ -7,24 +34,11 @@ def grade_easy(state, task):
         actions = state.get("actions", []) if isinstance(state, dict) else []
         for a in actions:
             if isinstance(a, dict) and a.get("action_type") == "identify":
-                result = float(0.9)
-                # Verify it's valid
-                if not (0 < result < 1):
-                    return float(0.5)
-                # EXTREME defensive: Reject exact boundary values
-                if result == 0.0 or result == 1.0:
-                    return float(0.5)
-                return result
+                return ensure_valid_score(0.9)
     except Exception:
         pass
     
-    result = float(0.1)
-    if not (0 < result < 1):
-        return float(0.5)
-    # EXTREME defensive: Reject exact boundary values
-    if result == 0.0 or result == 1.0:
-        return float(0.5)
-    return result
+    return ensure_valid_score(0.1)
 
 
 def grade_medium(state, task):
@@ -36,23 +50,11 @@ def grade_medium(state, task):
         actions = state.get("actions", []) if isinstance(state, dict) else []
         for a in actions:
             if isinstance(a, dict) and a.get("action_type") == "map_service":
-                result = float(0.85)
-                if not (0 < result < 1):
-                    return float(0.5)
-                # EXTREME defensive: Reject exact boundary values
-                if result == 0.0 or result == 1.0:
-                    return float(0.5)
-                return result
+                return ensure_valid_score(0.85)
     except Exception:
         pass
     
-    result = float(0.15)
-    if not (0 < result < 1):
-        return float(0.5)
-    # EXTREME defensive: Reject exact boundary values
-    if result == 0.0 or result == 1.0:
-        return float(0.5)
-    return result
+    return ensure_valid_score(0.15)
 
 
 def grade_hard(state, task):
@@ -67,11 +69,11 @@ def grade_hard(state, task):
     """
     try:
         if not isinstance(state, dict):
-            return float(0.5)
+            return ensure_valid_score(0.5)
         
         actions_list = state.get("actions", [])
         if not isinstance(actions_list, list):
-            return float(0.5)
+            return ensure_valid_score(0.5)
         
         actions = [a.get("action_type") for a in actions_list if isinstance(a, dict)]
         score = 0.1  # Base score to avoid 0.0
@@ -85,16 +87,6 @@ def grade_hard(state, task):
         
         # Cap at 0.95 to ensure < 1.0
         final_score = min(score, 0.95)
-        
-        # Verify it's valid
-        result = float(final_score)
-        if not (0 < result < 1):
-            return float(0.5)
-        
-        # EXTREME defensive: Reject exact boundary values
-        if result == 0.0 or result == 1.0:
-            return float(0.5)
-        
-        return result
+        return ensure_valid_score(final_score)
     except Exception:
-        return float(0.5)
+        return ensure_valid_score(0.5)

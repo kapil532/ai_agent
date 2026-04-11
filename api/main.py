@@ -8,6 +8,37 @@ from app.env import IncidentEnv
 from app.graders import grade_easy, grade_medium, grade_hard
 from api.realtime import manager
 
+# ============================================================================
+# ULTRA DEFENSIVE SCORING FUNCTION
+# ============================================================================
+
+def ensure_valid_score(score):
+    """
+    ULTRA DEFENSIVE: Ensure score is STRICTLY in (0, 1) range.
+    Absolute final check - no 0.0, no 1.0, no values outside (0, 1).
+    """
+    score = float(score)
+    
+    # Clip to safe range [0.01, 0.99]
+    if score <= 0.0 or score <= 0.005:
+        return 0.1
+    if score >= 1.0 or score >= 0.995:
+        return 0.95
+    if score < 0.01:
+        return 0.10
+    if score > 0.99:
+        return 0.95
+    
+    # Round and double-check
+    score = round(score, 2)
+    if score == 0.0 or score == 1.0 or score <= 0.0 or score >= 1.0:
+        return 0.5  # Middle safe value
+    if not (0 < score < 1):
+        return 0.5
+    
+    return score
+
+
 # Store active sessions for challenge mode
 active_sessions: Dict[str, Dict[str, Any]] = {}
 
@@ -499,6 +530,9 @@ def grader(task_id: str):
         if not (0 < score < 1):
             score = 0.5
         
+        # ABSOLUTE FINAL CHECK: Use ultra-defensive validation
+        score = ensure_valid_score(score)
+        
         # Log for debugging
         import sys
         print(f"[GRADER] task_id={task_id} score={score} valid={0 < score < 1}", file=sys.stderr, flush=True)
@@ -709,16 +743,8 @@ def challenge_step(session_id: str, action: ActionRequest = Body(...)):
     # This keeps scores in (0, 1) range
     session["score"] = round(reward_value, 2)
     
-    # Ensure stored score is also valid
-    if session["score"] <= 0.0:
-        session["score"] = 0.1
-    elif session["score"] >= 1.0:
-        session["score"] = 0.95
-    
-    # EXTREME defensive: Final explicit check for exact values
-    session["score"] = float(session["score"])
-    if session["score"] == 0.0 or session["score"] == 1.0:
-        session["score"] = 0.5  # Safe fallback
+    # Ensure stored score is also valid with ULTRA DEFENSIVE check
+    session["score"] = ensure_valid_score(session["score"])
     
     if done:
         session["status"] = "completed"

@@ -7,6 +7,37 @@ from app.tasks import load_task
 from app.rewards import compute_reward
 
 
+# ============================================================================
+# ULTRA DEFENSIVE SCORING FUNCTION
+# ============================================================================
+
+def ensure_valid_score(score):
+    """
+    ULTRA DEFENSIVE: Ensure score is STRICTLY in (0, 1) range.
+    Absolute final check - no 0.0, no 1.0, no values outside (0, 1).
+    """
+    score = float(score)
+    
+    # Clip to safe range [0.01, 0.99]
+    if score <= 0.0 or score <= 0.005:
+        return 0.1
+    if score >= 1.0 or score >= 0.995:
+        return 0.95
+    if score < 0.01:
+        return 0.10
+    if score > 0.99:
+        return 0.95
+    
+    # Round and double-check
+    score = round(score, 2)
+    if score == 0.0 or score == 1.0 or score <= 0.0 or score >= 1.0:
+        return 0.5  # Middle safe value
+    if not (0 < score < 1):
+        return 0.5
+    
+    return score
+
+
 class ChallengeMode:
     """Time-based challenge with escalating difficulty."""
     
@@ -118,14 +149,8 @@ class EnhancedIncidentEnv:
             # Ensure reward stays in valid range after multiplier
             reward = min(reward, 0.95)  # Cap at 0.95 to ensure strictly < 1.0
         
-        # EXTREME DEFENSIVE: Check for exact boundary values
-        reward = float(reward)
-        if reward == 0.0 or reward == 1.0:
-            reward = 0.5  # Safe fallback
-        
-        # FINAL check: ensure in range
-        if not (0 < reward < 1):
-            reward = 0.5
+        # ABSOLUTE FINAL CHECK: Use ultra-defensive validation
+        reward = ensure_valid_score(reward)
         
         self.metrics["total_reward"] += reward
         
